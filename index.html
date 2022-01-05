@@ -38,8 +38,8 @@
                 <button type="button" id="totalDeaths" class="p-2 btn btn-danger" disabled></button>
             </div>
         </div>
+        <div class="mb-5"></div>
         <div class="row" id="more">
-
         </div>
     </div>
 <script src="https://code.jquery.com/jquery-1.12.4.min.js" integrity="sha256-ZosEbRLbNQzLpnKIkEdrPv7lOy9C27hHQ+Xp8a4MxAQ=" crossorigin="anonymous"></script>
@@ -58,41 +58,48 @@
             const newDeaths = countryData.NewDeaths;
             const newRecovered = countryData.NewRecovered;
             const date = countryData.Date;
-            console.log(countryData)
-            $("#country").html(countryData);
-            $("#totalConfirmed").html(totalConfirmed);
-            $("#totalDeaths").html(totalDeaths);
-            $("#totalRecovered").html(totalRecovered);
-            $("#newConfirmed").html(newConfirmed);
-            $("#newDeaths").html(newDeaths);
-            $("#newRecovered").html(newRecovered);
-            $("#date").html(date);
+
+            $("#country").text(countryData);
+            $("#totalConfirmed").text(totalConfirmed);
+            $("#totalDeaths").text(totalDeaths);
+            $("#totalRecovered").text(totalRecovered);
+            $("#newConfirmed").text(newConfirmed);
+            $("#newDeaths").text(newDeaths);
+            $("#newRecovered").text(newRecovered);
+            $("#date").text(date);
         });
 
         $.getJSON("https://api.covid19api.com/country/PK", function(data) {
             let html = "";
             let lastConfirmedCases, lastConfirmedDeaths;
-            let splitData = data.filter(x => x.Confirmed > 0).reverse();
-            lastConfirmedCases = splitData[splitLength + 1].Confirmed;
-            lastConfirmedDeaths = splitData[splitLength + 1].Deaths;
-            splitData = splitData.slice(0, splitLength).reverse();
-            splitData = splitData.map(x => {
-                x.NewConfirmed = x.Confirmed - lastConfirmedCases;
-                x.NewDeaths = x.Deaths - lastConfirmedDeaths;
-                lastConfirmedCases = x.Confirmed;
-                lastConfirmedDeaths = x.Deaths
-                return x;
-            }).reverse();
-            splitData.forEach(x => {
-                const d = new Date(x.Date);
-                const date = `${d.getDate()}/${d.getMonth() + 1}/${d.getFullYear()}`
-                html += `<div class="col-sm-3">
-                <h3>${date}</h3>
-                <button type="button" class="p-2 btn btn-primary">${x.NewConfirmed}</button>
-                <button type="button" class="p-2 btn btn-danger">${x.NewDeaths}</button>
-            </div>`
-                lastConfirmedCases = x.Confirmed;
-            });
+
+            const startIndex = data.length - splitLength - 2;
+
+            lastConfirmedCases = data[startIndex].Confirmed;
+            lastConfirmedDeaths = data[startIndex].Deaths;
+
+            data
+                .slice(startIndex, data.length)
+                .map(x => {
+                    x.NewConfirmed = x.Confirmed - lastConfirmedCases;
+                    x.NewDeaths = x.Deaths - lastConfirmedDeaths;
+                    x.DateString = new Date(x.Date).toLocaleDateString();
+
+                    lastConfirmedCases = x.Confirmed;
+                    lastConfirmedDeaths = x.Deaths;
+
+                    return x;
+                })
+                .reverse()
+                .slice(0, splitLength)
+                .forEach(x =>
+                    html += `<div class="col-sm-3 mb-3">
+                        <h3>${x.DateString}</h3>
+                        <button type="button" class="p-2 btn btn-primary" disabled>${x.NewConfirmed}</button>
+                        <button type="button" class="p-2 btn btn-danger" disabled>${x.NewDeaths}</button>
+                    </div>`
+            );
+
             $("#more").html(html);
         });
     });
